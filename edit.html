@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Editor Surat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader {
+            border-top-color: #4f46e5;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden { display: none !important; }
+        /* Scrollbar custom tipis */
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-2 md:p-4 font-sans text-slate-800 text-xs">
+
+    <div class="max-w-full mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-3 gap-2">
+            <div>
+                <h1 class="text-lg font-bold text-slate-800 leading-tight">Manajemen Arsip Surat</h1>
+                <p class="text-[11px] text-slate-500">Edit data, re-upload arsip, atau hapus data registrasi.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openAddModal()" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 border border-indigo-600 rounded shadow-sm hover:bg-indigo-700 text-xs font-medium text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Tambah Data
+                </button>
+                <button onclick="fetchData()" class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded shadow-sm hover:bg-slate-50 text-xs font-medium text-slate-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 mb-3 flex flex-col md:flex-row gap-4 items-center">
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <label for="filterJenis" class="text-[11px] font-semibold text-slate-600 whitespace-nowrap uppercase tracking-wider">Filter Jenis:</label>
+                <select id="filterJenis" class="w-full md:w-32 px-2 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:border-indigo-500 cursor-pointer">
+                    <option value="semua">Semua</option>
+                    <option value="internal">Internal</option>
+                    <option value="eksternal">Eksternal</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto flex-1">
+                <label for="filterNomor" class="text-[11px] font-semibold text-slate-600 whitespace-nowrap uppercase tracking-wider">Cari Nomor:</label>
+                <input type="text" id="filterNomor" placeholder="Ketik nomor surat..." class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:border-indigo-500 uppercase transition-all">
+            </div>
+        </div>
+
+        <!-- Tabel Container -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto max-h-[85vh] overflow-y-auto relative">
+                <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
+                    <thead class="text-[10px] text-slate-700 uppercase bg-slate-100 border-b border-slate-200 sticky top-0 z-10">
+                        <tr>
+                            <th scope="col" class="px-3 py-2">No</th>
+                            <th scope="col" class="px-3 py-2">Waktu</th>
+                            <th scope="col" class="px-3 py-2">Jenis</th>
+                            <th scope="col" class="px-3 py-2 min-w-[110px]">Tgl Surat</th>
+                            <th scope="col" class="px-3 py-2 min-w-[150px]">Nomor Surat</th>
+                            <th scope="col" class="px-3 py-2 min-w-[150px]">Tujuan</th>
+                            <th scope="col" class="px-3 py-2 min-w-[150px]">Perihal</th>
+                            <th scope="col" class="px-3 py-2 min-w-[120px]">Keterangan</th>
+                            <th scope="col" class="px-3 py-2 text-center min-w-[100px]">File</th>
+                            <th scope="col" class="px-3 py-2 text-center sticky right-0 bg-slate-100 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] z-20">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+
+                <!-- States -->
+                <div id="loadingState" class="flex flex-col items-center justify-center py-10 w-full absolute top-10 left-0 bg-white/80 z-0">
+                    <div class="loader border-2 border-slate-200 rounded-full w-6 h-6 mb-2"></div>
+                    <p class="text-slate-500 font-medium text-xs">Memuat data...</p>
+                </div>
+                <div id="emptyState" class="hidden flex-col items-center justify-center py-10 w-full">
+                    <p class="text-slate-500 font-medium text-xs">Belum ada data arsip surat.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Data (Add Record) -->
+    <div id="addModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] overflow-y-auto">
+            <div class="flex justify-between items-center p-4 border-b border-slate-200">
+                <h2 class="text-base font-bold text-slate-800">Tambah Arsip Surat</h2>
+                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="addForm" class="p-4 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-[11px] font-semibold text-slate-700">Jenis Surat *</label>
+                        <select id="add_jenis_surat" required class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:border-indigo-500 cursor-pointer">
+                            <option value="" disabled selected>-- Pilih Jenis --</option>
+                            <option value="internal">Internal</option>
+                            <option value="eksternal">Eksternal</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-[11px] font-semibold text-slate-700">Tanggal Surat *</label>
+                        <input type="date" id="add_tanggal_surat" required class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-semibold text-slate-700">Nomor Surat *</label>
+                    <div class="flex rounded shadow-sm">
+                        <span id="add_nomor_prefix" class="inline-flex items-center px-2 border border-r-0 border-slate-300 bg-slate-100 text-slate-600 font-mono text-[11px]">---/</span>
+                        <input type="text" id="add_nomor_surat_lanjutan" required disabled placeholder="Pilih jenis surat" class="flex-1 w-full px-2 py-1.5 border border-slate-300 rounded-r text-xs font-mono uppercase focus:outline-none focus:ring-1 focus:border-indigo-500 disabled:bg-slate-50">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-semibold text-slate-700">Tujuan Surat *</label>
+                    <input type="text" id="add_tujuan" required placeholder="Instansi/Penerima" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs uppercase focus:outline-none focus:ring-1 focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-semibold text-slate-700">Perihal *</label>
+                    <input type="text" id="add_perihal" required placeholder="Contoh: Undangan Rapat" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-semibold text-slate-700">Keterangan</label>
+                    <input type="text" id="add_keterangan" placeholder="Opsional..." class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:border-indigo-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-semibold text-slate-700">Upload Arsip *</label>
+                    <input type="file" id="add_file_upload" accept=".pdf, .jpg, .jpeg, .png" required class="w-full text-xs border border-slate-300 rounded p-1 cursor-pointer">
+                </div>
+                <div class="pt-4 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 border border-slate-300 rounded text-xs font-medium bg-white hover:bg-slate-50 transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm">Simpan Registrasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Global Overlay -->
+    <div id="globalOverlay" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white p-4 rounded-lg shadow-xl flex items-center gap-3">
+            <div class="loader border-2 border-slate-200 rounded-full w-5 h-5"></div>
+            <p id="overlayText" class="font-semibold text-slate-700 text-xs">Memproses...</p>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2aJTKsnSqr2OvbfX8bxhVNgjA6rhfLJIcX3Deqh99kIUjoeODvgw5aKWVE3kSG3s6MQ/exec';
+        let suratData = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            // Menambahkan event listener untuk filter
+            document.getElementById('filterJenis').addEventListener('change', renderTable);
+            document.getElementById('filterNomor').addEventListener('input', renderTable);
+        });
+
+        async function fetchData() {
+            if (SCRIPT_URL.includes('URL_WEB_APP')) {
+                alert('Ganti SCRIPT_URL terlebih dahulu di dalam kode HTML!');
+                return;
+            }
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+                suratData = data;
+                renderTable();
+            } catch (error) {
+                alert("Gagal memuat data dari server.");
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            // 1. Ambil nilai filter saat ini
+            const filterJenis = document.getElementById('filterJenis').value.toLowerCase();
+            const filterNomor = document.getElementById('filterNomor').value.toUpperCase();
+
+            // 2. Filter data berdasarkan input
+            let processedData = suratData.filter(item => {
+                const matchJenis = filterJenis === 'semua' || (item.jenis_surat || '').toLowerCase() === filterJenis;
+                const matchNomor = (item.nomor_surat || '').toUpperCase().includes(filterNomor);
+                return matchJenis && matchNomor;
+            });
+
+            // 3. Sortir data berdasarkan Tanggal Surat (Terbaru di atas / Descending)
+            processedData.sort((a, b) => {
+                const dateA = new Date(a.tanggal_surat).getTime() || 0;
+                const dateB = new Date(b.tanggal_surat).getTime() || 0;
+                return dateB - dateA;
+            });
+
+            // 4. Render tampilan state kosong / tabel
+            if (processedData.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                // Ubah teks jika kosong karena filter
+                document.querySelector('#emptyState p').textContent = suratData.length > 0 ? "Tidak ada surat yang cocok dengan filter." : "Belum ada data arsip surat.";
+                return;
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            processedData.forEach((item, index) => {
+                let dateValue = '';
+                try {
+                    const d = new Date(item.tanggal_surat);
+                    if(!isNaN(d.getTime())) {
+                        // Memastikan format YYYY-MM-DD dari zona waktu lokal (Local Time), 
+                        // bukan UTC, sehingga mencegah tanggal mundur 1 hari.
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        dateValue = `${yyyy}-${mm}-${dd}`;
+                    } else {
+                        dateValue = item.tanggal_surat;
+                    }
+                } catch(e) { dateValue = item.tanggal_surat; }
+
+                // Format tanggal lebih pendek
+                const formatWaktu = new Date(item.waktu).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: '2-digit'});
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50 transition-colors group";
+                tr.id = `row-${item.row}`;
+                
+                tr.innerHTML = `
+                    <td class="px-3 py-2 text-center">${index + 1}</td>
+                    <td class="px-3 py-2 text-[10px] text-slate-400">${formatWaktu}</td>
+                    <td class="px-3 py-2">
+                        <span class="view-mode-${item.row} inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${item.jenis_surat === 'internal' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'} capitalize">${item.jenis_surat}</span>
+                        <select class="edit-mode-${item.row} hidden w-full px-1 py-0.5 border border-indigo-300 rounded text-xs focus:outline-none focus:ring-1">
+                            <option value="internal" ${item.jenis_surat === 'internal' ? 'selected' : ''}>Internal</option>
+                            <option value="eksternal" ${item.jenis_surat === 'eksternal' ? 'selected' : ''}>Eksternal</option>
+                        </select>
+                    </td>
+                    <td class="px-3 py-2">
+                        <span class="view-mode-${item.row}">${dateValue}</span>
+                        <input type="date" class="edit-mode-${item.row} hidden w-full px-1 py-0.5 border border-indigo-300 rounded text-xs focus:outline-none" value="${dateValue}">
+                    </td>
+                    <td class="px-3 py-2 font-mono text-[11px]">
+                        <span class="view-mode-${item.row}">${item.nomor_surat}</span>
+                        <input type="text" class="edit-mode-${item.row} hidden uppercase w-full px-1 py-0.5 border border-indigo-300 rounded text-xs focus:outline-none" value="${item.nomor_surat}" oninput="this.value = this.value.toUpperCase()">
+                    </td>
+                    <td class="px-3 py-2">
+                        <span class="view-mode-${item.row}">${item.tujuan}</span>
+                        <input type="text" class="edit-mode-${item.row} hidden uppercase w-full px-1 py-0.5 border border-indigo-300 rounded text-xs focus:outline-none" value="${item.tujuan}" oninput="this.value = this.value.toUpperCase()">
+                    </td>
+                    <td class="px-3 py-2 truncate max-w-[150px]" title="${item.perihal}">
+                        <span class="view-mode-${item.row}">${item.perihal}</span>
+                        <input type="text" class="edit-mode-${item.row} hidden w-full px-1 py-0.5 border border-indigo-300 rounded text-xs focus:outline-none" value="${item.perihal}">
+                    </td>
+                    <td class="px-3 py-2 truncate max-w-[120px]" title="${item.keterangan || '-'}">
+                        <span class="view-mode-${item.row}">${item.keterangan || '-'}</span>
+                        <input type="text" class="edit-mode-${item.row} hidden w-full px-1 py-0.5 border border-indigo-300 rounded text-xs focus:outline-none" value="${item.keterangan}">
+                    </td>
+                    
+                    <!-- File Section -->
+                    <td class="px-3 py-2 text-center">
+                        ${item.url_file ? `
+                        <a href="${item.url_file}" target="_blank" class="view-mode-${item.row} inline-flex items-center text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-1.5 rounded hover:bg-indigo-100" title="Lihat Dokumen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                        </a>
+                        ` : `
+                        <span class="view-mode-${item.row} inline-flex items-center justify-center text-[10px] text-red-500 bg-red-50 p-1.5 rounded w-[26px] h-[26px] cursor-help" title="Tidak ada file arsip">❌</span>
+                        `}
+                        <!-- Mode Edit: Input Ganti File -->
+                        <div class="edit-mode-${item.row} hidden flex-col items-center gap-0.5">
+                            <label class="cursor-pointer bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-[10px] py-0.5 px-1.5 rounded font-medium transition-colors">
+                                Ganti File
+                                <input type="file" class="hidden file-upload-${item.row}" accept=".pdf, .jpg, .jpeg, .png" onchange="updateFileText(this, ${item.row})">
+                            </label>
+                            <span id="file-desc-${item.row}" class="text-[9px] text-slate-400 max-w-[80px] truncate block">Bila tak diganti, biarkan</span>
+                        </div>
+                    </td>
+
+                    <td class="px-3 py-2 text-center sticky right-0 bg-white group-hover:bg-slate-50 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] border-l border-slate-100">
+                        <div class="view-btn-${item.row} flex justify-center gap-1">
+                            <button onclick="toggleEdit(${item.row}, true)" class="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+                            <button onclick="deleteData(${item.row})" class="p-1 text-red-600 hover:bg-red-100 rounded" title="Hapus"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                        </div>
+                        <div class="edit-btn-${item.row} hidden flex justify-center gap-1">
+                            <button onclick="saveData(${item.row})" class="p-1 text-green-600 hover:bg-green-100 rounded" title="Simpan"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+                            <button onclick="toggleEdit(${item.row}, false)" class="p-1 text-slate-500 hover:bg-slate-200 rounded" title="Batal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Tampilkan nama file jika user memilih file saat edit
+        function updateFileText(input, rowId) {
+            const span = document.getElementById(`file-desc-${rowId}`);
+            if (input.files && input.files[0]) {
+                span.textContent = input.files[0].name;
+                span.classList.replace('text-slate-400', 'text-indigo-600');
+            } else {
+                span.textContent = "Bila tak diganti, biarkan";
+                span.classList.replace('text-indigo-600', 'text-slate-400');
+            }
+        }
+
+        function toggleEdit(rowId, isEditing) {
+            document.querySelectorAll(`.view-mode-${rowId}, .view-btn-${rowId}`).forEach(el => el.classList.toggle('hidden', isEditing));
+            document.querySelectorAll(`.edit-mode-${rowId}, .edit-btn-${rowId}`).forEach(el => el.classList.toggle('hidden', !isEditing));
+            const tr = document.getElementById(`row-${rowId}`);
+            if (isEditing) tr.classList.replace('hover:bg-slate-50', 'bg-indigo-50/50');
+            else { tr.classList.replace('bg-indigo-50/50', 'hover:bg-slate-50'); renderTable(); }
+        }
+
+        async function saveData(rowId) {
+            const inputs = document.querySelectorAll(`.edit-mode-${rowId}`);
+            const fileInput = document.querySelector(`.file-upload-${rowId}`);
+            const newFile = fileInput.files[0];
+            const oldData = suratData.find(item => item.row === rowId); 
+            
+            const payload = {
+                action: "update",
+                row: rowId,
+                jenis_surat: inputs[0].value,
+                tanggal_surat: inputs[1].value,
+                nomor_surat: inputs[2].value.toUpperCase(),
+                tujuan: inputs[3].value.toUpperCase(),
+                perihal: inputs[4].value,
+                keterangan: inputs[5].value,
+                old_url_file: oldData.url_file 
+            };
+
+            showOverlay("Menyimpan...");
+
+            try {
+                if (newFile) {
+                    const reader = new FileReader();
+                    reader.onload = async function() {
+                        payload.file_base64 = reader.result;
+                        payload.file_name = newFile.name;
+                        payload.file_mime = newFile.type;
+                        await kirimKeServer(payload, rowId);
+                    };
+                    reader.readAsDataURL(newFile);
+                } else {
+                    await kirimKeServer(payload, rowId);
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan memproses file.');
+                hideOverlay();
+            }
+        }
+
+        async function kirimKeServer(payload, rowId) {
+            try {
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await response.json();
+                if (result.result === 'success') {
+                    toggleEdit(rowId, false);
+                    fetchData();
+                } else {
+                    alert('Gagal menyimpan: ' + result.message);
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan jaringan.');
+            } finally {
+                hideOverlay();
+            }
+        }
+
+        async function deleteData(rowId) {
+            if (!confirm("Hapus arsip beserta filenya di Google Drive?")) return;
+            const oldData = suratData.find(item => item.row === rowId);
+            const payload = { action: "delete", row: rowId, old_url_file: oldData.url_file };
+            showOverlay("Menghapus...");
+            try {
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await response.json();
+                if (result.result === 'success') fetchData();
+                else alert('Gagal menghapus: ' + result.message);
+            } catch (error) {
+                alert('Terjadi kesalahan jaringan.');
+            } finally {
+                hideOverlay();
+            }
+        }
+
+        function showOverlay(text) { document.getElementById('overlayText').textContent = text; document.getElementById('globalOverlay').classList.remove('hidden'); }
+        function hideOverlay() { document.getElementById('globalOverlay').classList.add('hidden'); }
+
+        // ==========================================
+        // LOGIKA MODAL TAMBAH DATA (ADD RECORD)
+        // ==========================================
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+            // Set default tanggal hari ini menggunakan Local Time
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            document.getElementById('add_tanggal_surat').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('addForm').reset();
+            document.getElementById('add_nomor_prefix').textContent = '---/';
+            document.getElementById('add_nomor_surat_lanjutan').disabled = true;
+        }
+
+        // Force Uppercase
+        document.getElementById('add_nomor_surat_lanjutan').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+        document.getElementById('add_tujuan').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+
+        // Logic auto-prefix saat jenis surat diubah
+        document.getElementById('add_jenis_surat').addEventListener('change', function() {
+            const numInput = document.getElementById('add_nomor_surat_lanjutan');
+            numInput.disabled = false;
+            document.getElementById('add_nomor_prefix').textContent = this.value === 'internal' ? '421/' : '422/';
+            numInput.focus();
+        });
+
+        // Event Submit Form Tambah Data
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('add_file_upload').files[0];
+            if (!file) return alert('Silakan pilih file arsip!');
+
+            const payload = {
+                action: 'create', // Parameter untuk dibaca oleh backend (Code.gs)
+                jenis_surat: document.getElementById('add_jenis_surat').value,
+                tanggal_surat: document.getElementById('add_tanggal_surat').value,
+                nomor_surat: document.getElementById('add_nomor_prefix').textContent + document.getElementById('add_nomor_surat_lanjutan').value.toUpperCase(),
+                tujuan: document.getElementById('add_tujuan').value.toUpperCase(),
+                perihal: document.getElementById('add_perihal').value,
+                keterangan: document.getElementById('add_keterangan').value
+            };
+
+            showOverlay("Mengunggah data & file baru...");
+            const reader = new FileReader();
+            
+            reader.onload = async function() {
+                payload.file_base64 = reader.result;
+                payload.file_name = file.name;
+                payload.file_mime = file.type;
+
+                try {
+                    const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    const result = await res.json();
+                    
+                    if (result.result === 'success') {
+                        closeAddModal();
+                        fetchData(); // Refresh tabel agar data baru langsung muncul teratas
+                    } else {
+                        alert('Gagal menyimpan: ' + result.message);
+                    }
+                } catch (err) { 
+                    alert('Terjadi kesalahan jaringan.'); 
+                } finally { 
+                    hideOverlay(); 
+                }
+            };
+            
+            reader.readAsDataURL(file); // Mulai ubah file ke base64
+        });
+    </script>
+</body>
+</html>

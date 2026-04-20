@@ -121,7 +121,7 @@
                     <label class="block text-[11px] font-semibold text-slate-700">Nomor Surat *</label>
                     <div class="flex rounded shadow-sm">
                         <span id="add_nomor_prefix" class="inline-flex items-center px-2 border border-r-0 border-slate-300 bg-slate-100 text-slate-600 font-mono text-[11px]">---/</span>
-                        <input type="text" id="add_nomor_surat_lanjutan" required disabled placeholder="Pilih jenis surat" class="flex-1 w-full px-2 py-1.5 border border-slate-300 rounded-r text-xs font-mono uppercase focus:outline-none focus:ring-1 focus:border-indigo-500 disabled:bg-slate-50">
+                        <input type="text" id="add_nomor_surat_lanjutan" required disabled placeholder="Contoh : 001/SDN20KDI/2026" class="flex-1 w-full px-2 py-1.5 border border-slate-300 rounded-r text-xs font-mono uppercase focus:outline-none focus:ring-1 focus:border-indigo-500 disabled:bg-slate-50">
                     </div>
                 </div>
                 <div class="space-y-1">
@@ -450,7 +450,7 @@
         document.getElementById('add_jenis_surat').addEventListener('change', function() {
             const numInput = document.getElementById('add_nomor_surat_lanjutan');
             numInput.disabled = false;
-            document.getElementById('add_nomor_prefix').textContent = this.value === 'internal' ? '421/' : '422/';
+            document.getElementById('add_nomor_prefix').textContent = this.value === 'internal' ? '421.1/' : '421.2/';
             numInput.focus();
         });
 

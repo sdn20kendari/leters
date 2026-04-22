@@ -479,7 +479,7 @@
         document.getElementById('add_jenis_surat').addEventListener('change', function() {
             const numInput = document.getElementById('add_nomor_lanjutan');
             numInput.disabled = false;
-            document.getElementById('add_nomor_prefix').textContent = this.value === 'internal' ? '421/' : '422/';
+            document.getElementById('add_nomor_prefix').textContent = this.value === 'internal' ? '421.1/' : '421.2/';
             numInput.focus();
         });
 

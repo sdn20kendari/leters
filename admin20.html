@@ -8,23 +8,19 @@
     <style>
         .loader {
             border-top-color: #4f46e5;
-            -webkit-animation: spinner 1s linear infinite;
-            animation: spinner 1s linear infinite;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
         }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         .hidden { display: none !important; }
-        
-        /* Custom Scrollbar Super Tipis */
+        /* Scrollbar custom tipis */
         ::-webkit-scrollbar { height: 6px; width: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* Mencegah input merusak lebar tabel saat mode edit */
-        input[type="text"], input[type="date"], select {
-            min-width: 100%;
-            box-sizing: border-box;
-        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen p-3 md:p-5 font-sans text-slate-800 text-xs selection:bg-indigo-100 selection:text-indigo-900">
@@ -191,7 +187,7 @@
         
         let suratData = [];
         let deletedFiles = {}; // Melacak file yang dihapus di mode edit
-        let sortCol = 'waktu'; // Kolom sortir default
+        let sortCol = 'tanggal_surat'; // Kolom sortir default
         let sortAsc = false;   // false = Descending (Terbaru/Teratas)
 
         // Init
@@ -330,7 +326,7 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                                 </a>
                             ` : `
-                                <span class="inline-flex items-center text-[10px] text-red-400 bg-red-50 px-2 py-1 rounded font-bold" title="Tidak ada file">KOSONG</span>
+                                <span class="inline-flex items-center text-[10px] text-red-400 bg-red-50 px-2 py-1 rounded font-bold" title="Tidak ada file">❌</span>
                             `}
                         </div>
                         <div class="e-${item.row} hidden flex flex-col items-center gap-1.5 w-full">
